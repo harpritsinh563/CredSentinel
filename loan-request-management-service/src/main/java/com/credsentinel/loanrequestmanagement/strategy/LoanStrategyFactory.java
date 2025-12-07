@@ -1,7 +1,7 @@
-package strategy;
+package com.credsentinel.loanrequestmanagement.strategy;
 
-import constants.LoanOperation;
-import exception.UnsupportedLoanOperationException;
+import com.credsentinel.loanrequestmanagement.constants.LoanOperation;
+import com.credsentinel.loanrequestmanagement.exception.UnsupportedLoanOperationException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

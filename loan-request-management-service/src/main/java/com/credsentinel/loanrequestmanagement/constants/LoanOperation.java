@@ -1,4 +1,4 @@
-package constants;
+package com.credsentinel.loanrequestmanagement.constants;
 
 public enum LoanOperation {
     CREATE,
