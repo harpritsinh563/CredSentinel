@@ -1,11 +1,11 @@
-package service;
+package com.credsentinel.loanrequestmanagement.service;
 
-import constants.LoanOperation;
-import dto.request.LoanCreateRequest;
-import dto.response.LoanResponse;
-import exception.UnsupportedLoanOperationException;
+import com.credsentinel.loanrequestmanagement.dto.request.LoanCreateRequest;
+import com.credsentinel.loanrequestmanagement.constants.LoanOperation;
+import com.credsentinel.loanrequestmanagement.dto.response.LoanResponse;
+import com.credsentinel.loanrequestmanagement.exception.UnsupportedLoanOperationException;
 import org.springframework.stereotype.Service;
-import strategy.LoanStrategyFactory;
+import com.credsentinel.loanrequestmanagement.strategy.LoanStrategyFactory;
 
 @Service
 public class LoanServiceImpl implements LoanService {

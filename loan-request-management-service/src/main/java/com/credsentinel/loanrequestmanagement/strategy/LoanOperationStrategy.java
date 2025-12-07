@@ -1,6 +1,6 @@
-package strategy;
+package com.credsentinel.loanrequestmanagement.strategy;
 
-import constants.LoanOperation;
+import com.credsentinel.loanrequestmanagement.constants.LoanOperation;
 
 public interface LoanOperationStrategy {
 
