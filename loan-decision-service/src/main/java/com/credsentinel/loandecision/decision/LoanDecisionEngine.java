@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class LoanDecisionEngine {
 
     public void process(LoanRequestCreatedEvent event){
-
+        log.info("Received loan request created event");
     }
 
 }
