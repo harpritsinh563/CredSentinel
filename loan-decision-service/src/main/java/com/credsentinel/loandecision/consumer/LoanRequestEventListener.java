@@ -18,7 +18,8 @@ public class LoanRequestEventListener {
 
     @KafkaListener(
             topics = "CredSentinel.LoanRequestCreated",
-            groupId = "CredSentinel.LoanDecisionService"
+            groupId = "CredSentinel.LoanDecisionService",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     public void onMessage(@Payload LoanRequestCreatedEvent event, Acknowledgment acknowledgment){
         try{
