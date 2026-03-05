@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package loan.anomaly.v1;
+
+option java_multiple_files = true;
+option java_package = "com.loan.anomaly.grpc";
+option java_outer_classname = "LoanAnomalyProto";
+
+service LoanAnomalyService {
+  rpc DetectAnomaly (LoanAnomalyRequest)
+      returns (LoanAnomalyResponse);
+}
+
+message LoanAnomalyRequest {
+  string loan_id = 1;
+  string user_id = 2;
+
+  double loan_amount = 3;
+  int32 tenure_months = 4;
+  double interest_rate = 5;
+
+  double monthly_income = 6;
+  int32 credit_score = 7;
+
+  int32 previous_loans_count = 8;
+  int32 previous_defaults = 9;
+
+  string country = 10;
+}
+
+message LoanAnomalyResponse {
+  string loan_id = 1;
+  string status = 2; // TEMPORARY for MVP (NORMAL / SUSPICIOUS)
+}
