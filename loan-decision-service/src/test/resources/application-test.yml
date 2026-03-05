@@ -1,0 +1,8 @@
+spring:
+  kafka:
+    admin:
+      properties:
+        cleanup.policy: delete
+    properties:
+      # Shorten the segment life to allow quicker deletion
+      log.segment.delete.delay.ms: 0
