@@ -17,8 +17,8 @@ spring:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
 
         spring.json.use.type.headers: false
-        spring.json.value.default.type: com.credsentinel.loandecision.model.LoanRequestCreatedEvent
-        spring.json.trusted.packages: com.credsentinel.loandecision.model
+        spring.json.value.default.type: com.credsentinel.common.model.LoanRequestCreatedEvent
+        spring.json.trusted.packages: com.credsentinel.common.model
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

@@ -2,8 +2,8 @@ package com.credsentinel.loandecision.component;
 
 import com.credsentinel.loandecision.constant.KycStatus;
 import com.credsentinel.loandecision.entity.User;
-import com.credsentinel.loandecision.model.LoanDecisionMadeEvent;
-import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.common.model.LoanDecisionMadeEvent;
+import com.credsentinel.common.model.LoanRequestCreatedEvent;
 import com.credsentinel.loandecision.repository.LoanStatusHistoryRepository;
 import com.credsentinel.loandecision.repository.RiskScoreRepository;
 import com.credsentinel.loandecision.repository.UserRepository;

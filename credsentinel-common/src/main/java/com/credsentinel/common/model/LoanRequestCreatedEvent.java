@@ -1,4 +1,4 @@
-package com.credsentinel.loandecision.model;
+package com.credsentinel.common.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

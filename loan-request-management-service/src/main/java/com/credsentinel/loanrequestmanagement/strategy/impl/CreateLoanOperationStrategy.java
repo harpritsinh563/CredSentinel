@@ -1,8 +1,7 @@
 package com.credsentinel.loanrequestmanagement.strategy.impl;
 
-import com.credsentinel.loanrequestmanagement.constants.LoanStatus;
 import com.credsentinel.loanrequestmanagement.dto.request.LoanCreateRequest;
-import com.credsentinel.loanrequestmanagement.entities.LoanRequestEntity;
+import com.credsentinel.loanrequestmanagement.entities.LoanRequest;
 import com.credsentinel.loanrequestmanagement.repository.LoanRequestRepository;
 import com.credsentinel.loanrequestmanagement.strategy.LoanOperationStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +30,7 @@ public class CreateLoanOperationStrategy implements LoanOperationStrategy {
     public Object execute(Object request) {
         LoanCreateRequest req = (LoanCreateRequest) request;
 
-        LoanRequestEntity entity = LoanRequestEntity.builder()
+        LoanRequest entity = LoanRequest.builder()
                 .loanRequestId(UuidCreator.getTimeOrdered())
                 .userId(UUID.fromString(req.getUserId()))
                 .loanAmount(req.getLoanAmount())
@@ -45,7 +44,7 @@ public class CreateLoanOperationStrategy implements LoanOperationStrategy {
 
 
         // save loan_request
-        LoanRequestEntity saved = repository.save(entity);
+        LoanRequest saved = repository.save(entity);
 
         // Placeholder : Publish Kafka event
 
@@ -60,7 +59,7 @@ public class CreateLoanOperationStrategy implements LoanOperationStrategy {
         }
     }
 
-    private LoanResponse mapToResponse(LoanRequestEntity entity) {
+    private LoanResponse mapToResponse(LoanRequest entity) {
         return LoanResponse.builder()
                 .loanRequestId(entity.getLoanRequestId())
                 .userId(entity.getUserId())
