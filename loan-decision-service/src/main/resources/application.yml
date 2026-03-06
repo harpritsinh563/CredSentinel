@@ -26,6 +26,28 @@ spring:
 
 server:
   port: 8082
+  datasource:
+    url: jdbc:h2:mem:loandecisiondb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: loandecision1234
+
+    h2:
+      console:
+        enabled: true
+        path: /h2-console
+        settings:
+          trace: false
+          web-allow-others: false
+
+    jpa:
+      database-platform: org.hibernate.dialect.H2Dialect
+      hibernate:
+        ddl-auto: update
+      show-sql: false
+      properties:
+        hibernate:
+          format_sql: true
 
 logging:
   level:

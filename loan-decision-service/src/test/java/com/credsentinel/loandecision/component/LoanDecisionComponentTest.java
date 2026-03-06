@@ -1,7 +1,12 @@
 package com.credsentinel.loandecision.component;
 
+import com.credsentinel.loandecision.constant.KycStatus;
+import com.credsentinel.loandecision.entity.User;
 import com.credsentinel.loandecision.model.LoanDecisionMadeEvent;
 import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.loandecision.repository.LoanStatusHistoryRepository;
+import com.credsentinel.loandecision.repository.RiskScoreRepository;
+import com.credsentinel.loandecision.repository.UserRepository;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -59,6 +64,15 @@ public class LoanDecisionComponentTest {
     @Autowired
     private KafkaListenerEndpointRegistry registry;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private LoanStatusHistoryRepository loanStatusHistoryRepository;
+
+    @Autowired
+    private RiskScoreRepository riskScoreRepository;
+
     private Consumer<String, LoanDecisionMadeEvent> decisionConsumer;
 
     @BeforeEach
@@ -69,7 +83,7 @@ public class LoanDecisionComponentTest {
         }
 
         // 2. Setup a manual consumer with a UNIQUE group ID to avoid the rebalance loop
-        String uniqueGroupId = "test-group-" + UUID.randomUUID();
+        String uniqueGroupId = UUID.randomUUID().toString();
         Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(uniqueGroupId, "true", embeddedKafkaBroker);
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
@@ -96,9 +110,15 @@ public class LoanDecisionComponentTest {
     @Test
     void shouldApproveLoanRequest_WhenUserIsVerifiedAndAmountIsLow() {
         // Arrange
-        String loanId = "LOAN-" + UUID.randomUUID();
+        String loanId = UUID.randomUUID().toString();
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setKycStatus(KycStatus.VERIFIED.toString());
+        user.setUserId(userId);
+
+        userRepository.save(user);
         LoanRequestCreatedEvent requestEvent = new LoanRequestCreatedEvent(
-                loanId, "user-123", new BigDecimal("5000"), 60, 750, Instant.now()
+                loanId, userId.toString(), new BigDecimal("5000"), 60, 750, Instant.now()
         );
 
         // Act
@@ -116,9 +136,15 @@ public class LoanDecisionComponentTest {
     @Test
     void shouldRejectLoanRequest_WhenTenureIsTooLong() {
         // Arrange
-        String loanId = "LOAN-" + UUID.randomUUID();
+        String loanId = UUID.randomUUID().toString();
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setUserId(userId);
+
+        userRepository.save(user);
+
         LoanRequestCreatedEvent requestEvent = new LoanRequestCreatedEvent(
-                loanId, "user-456", new BigDecimal("5000"), 1000, 750, Instant.now()
+                loanId, userId.toString(), new BigDecimal("5000"), 1000, 750, Instant.now()
         );
 
         // Act

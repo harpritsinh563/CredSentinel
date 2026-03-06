@@ -1,7 +1,14 @@
 package com.credsentinel.loandecision.decision;
 
+import com.credsentinel.loandecision.entity.LoanStatusHistory;
+import com.credsentinel.loandecision.entity.RiskScore;
+import com.credsentinel.loandecision.entity.User;
 import com.credsentinel.loandecision.model.LoanDecisionMadeEvent;
 import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.loandecision.repository.LoanStatusHistoryRepository;
+import com.credsentinel.loandecision.repository.RiskScoreRepository;
+import com.credsentinel.loandecision.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -9,7 +16,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
+import static com.credsentinel.loandecision.constant.KycStatus.VERIFIED;
 import static com.credsentinel.loandecision.constant.LoanDecisionStatus.APPROVED;
 import static com.credsentinel.loandecision.constant.LoanDecisionStatus.REJECTED;
 
@@ -18,32 +27,59 @@ import static com.credsentinel.loandecision.constant.LoanDecisionStatus.REJECTED
 @RequiredArgsConstructor
 public class LoanDecisionEngine {
 
+    private final UserRepository userRepository;
+    private final RiskScoreRepository riskScoreRepository;
+    private final LoanStatusHistoryRepository statusHistoryRepository;
     private final KafkaTemplate<String, LoanDecisionMadeEvent> kafkaTemplate;
 
+    // TODO : In future, externalize the rules and their evaluators, maintain a RuleRegistry, an interface RuleEvaluator and iterate on the implementations/beans of RuleEvalutors
+    @Transactional
     public void process(LoanRequestCreatedEvent event) {
-        String decision = APPROVED.name();
-        StringBuilder reason = new StringBuilder("Policy checks passed.");
+        log.info("Starting decision process for Loan ID: {}", event.getLoanRequestId());
 
-        // 1. Business Rule: Maximum Amount Check
-        if (event.getAmount().compareTo(new BigDecimal("100000")) > 0) {
-            decision = REJECTED.name();
-            reason = new StringBuilder("Amount exceeds maximum limit for automated approval.");
+        // 1. Fetch User
+        User user = userRepository.findById(UUID.fromString(event.getUserId()))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String decision = APPROVED.toString();
+        String reason = "All policy checks passed.";
+
+        // 2. Business Rule: KYC Check
+        if (!VERIFIED.toString().equals(user.getKycStatus())) {
+            decision = REJECTED.toString();
+            reason = "User KYC is not verified.";
+        }
+        // 3. Business Rule: High Amount Threshold
+        else if (event.getAmount().compareTo(new BigDecimal("50000")) > 0 && event.getRiskScore() < 600) {
+            decision = REJECTED.toString();
+            reason = "High amount requested with insufficient risk score.";
         }
 
-        // 2. Business Rule: Tenure Check (Must be between 30 and 365 days)
-        if (event.getTenureDays() < 30 || event.getTenureDays() > 365) {
-            decision = REJECTED.name();
-            reason = new StringBuilder("Invalid tenure requested.");
-        }
+        // 4. Persist the Risk Score (Serious Business Auditing)
+        saveRiskData(event, decision);
 
-        // 3. Risk Score Check (Initial Logic)
-        if (event.getRiskScore() != null && event.getRiskScore() < 500) {
-            decision = REJECTED.name();
-            reason = new StringBuilder("Risk score below minimum threshold.");
-        }
+        // 5. Log to Loan Status History
+        saveStatusHistory(event, decision, reason);
 
-        // Publish the result
-        publishDecision(event, decision, reason.toString());
+        // 6. Final Step: Publish to Kafka
+        publishDecision(event, decision, reason);
+    }
+
+    private void saveRiskData(LoanRequestCreatedEvent event, String decision) {
+        RiskScore risk = new RiskScore();
+        risk.setLoanRequestId(UUID.fromString(event.getLoanRequestId()));
+        risk.setCreditScore(event.getRiskScore());
+        risk.setFinalRiskScore(event.getRiskScore()); // Logic to combine with Anomaly score later
+        riskScoreRepository.save(risk);
+    }
+
+    private void saveStatusHistory(LoanRequestCreatedEvent event, String decision, String reason) {
+        LoanStatusHistory history = new LoanStatusHistory();
+        history.setLoanRequestId(UUID.fromString(event.getLoanRequestId()));
+        history.setStatus(decision.equals(APPROVED.toString()) ?APPROVED.toString(): REJECTED.toString());
+        history.setReason(reason);
+        history.setSourceService("loan-decision-service");
+        statusHistoryRepository.save(history);
     }
 
     private void publishDecision(LoanRequestCreatedEvent event, String decision, String reason) {
@@ -56,6 +92,5 @@ public class LoanDecisionEngine {
                 .build();
 
         kafkaTemplate.send("CredSentinel.LoanDecisionMade", result.getLoanRequestId(), result);
-        log.info("Decision published: {} for Loan: {}", decision, event.getLoanRequestId());
     }
 }
