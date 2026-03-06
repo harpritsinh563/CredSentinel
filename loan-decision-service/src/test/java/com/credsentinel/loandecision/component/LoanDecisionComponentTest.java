@@ -7,6 +7,11 @@ import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
 import com.credsentinel.loandecision.repository.LoanStatusHistoryRepository;
 import com.credsentinel.loandecision.repository.RiskScoreRepository;
 import com.credsentinel.loandecision.repository.UserRepository;
+import com.loan.anomaly.grpc.LoanAnomalyRequest;
+import com.loan.anomaly.grpc.LoanAnomalyResponse;
+import com.loan.anomaly.grpc.LoanAnomalyServiceGrpc;
+import io.grpc.stub.StreamObserver;
+import net.devh.boot.grpc.server.service.GrpcService;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -14,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -37,7 +44,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.AfterEach;
-@SpringBootTest
+@SpringBootTest(properties = {
+        "grpc.client.loan-anomaly-service.address=in-process:test-server",
+        "grpc.server.in-process-name=test-server",
+        "grpc.client.loan-anomaly-service.negotiation-type=plaintext"
+})
 @EmbeddedKafka(
         controlledShutdown = true,
         partitions = 1,
@@ -73,10 +84,45 @@ public class LoanDecisionComponentTest {
     @Autowired
     private RiskScoreRepository riskScoreRepository;
 
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public MockAnomalyService mockAnomalyService() {
+            return new MockAnomalyService();
+        }
+
+        @Bean
+        public String grpcInProcessName() {
+            return "test-" + UUID.randomUUID();
+        }
+    }
+
+    @GrpcService
+    // Mock anomaly service for testing in isolation
+    public static class MockAnomalyService extends LoanAnomalyServiceGrpc.LoanAnomalyServiceImplBase {
+        @Override
+        public void detectAnomaly(LoanAnomalyRequest request, StreamObserver<LoanAnomalyResponse> responseObserver) {
+            // Mock logic: If amount is exactly 99999, trigger a SUSPICIOUS flag for testing
+            String status = (request.getLoanAmount() == 99999.0) ? "SUSPICIOUS" : "NORMAL";
+
+            LoanAnomalyResponse response = LoanAnomalyResponse.newBuilder()
+                    .setLoanId(request.getLoanId())
+                    .setStatus(status)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+    }
+
     private Consumer<String, LoanDecisionMadeEvent> decisionConsumer;
 
     @BeforeEach
     void setup() {
+        userRepository.deleteAll();
+        riskScoreRepository.deleteAll();
+        loanStatusHistoryRepository.deleteAll();
+
         // 1. Wait for Spring @KafkaListener containers to be ready
         for (MessageListenerContainer container : registry.getListenerContainers()) {
             ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic());
@@ -168,5 +214,45 @@ public class LoanDecisionComponentTest {
 
         assertThat(foundRecord).isNotNull();
         assertThat(foundRecord.value().getDecision()).isEqualTo("REJECTED");
+    }
+
+    @Test
+    void shouldRejectLoan_WhenAnomalyServiceFlagsSuspicious() {
+        // Arrange
+        String loanId = UUID.randomUUID().toString();
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setKycStatus(KycStatus.VERIFIED.toString());
+        user.setUserId(userId);
+        userRepository.save(user);
+
+        // We trigger the 'SUSPICIOUS' mock logic using the amount 99999
+        LoanRequestCreatedEvent requestEvent = new LoanRequestCreatedEvent(
+                loanId, userId.toString(), new BigDecimal("99999"), 60, 750, Instant.now()
+        );
+
+        // Act
+        kafkaTemplate.send("CredSentinel.LoanRequestCreated", loanId, requestEvent);
+
+        // Assert
+        LoanDecisionMadeEvent record = pollForDecision(loanId);
+
+        assertThat(record.getDecision()).isEqualTo("REJECTED");
+        assertThat(record.getReason()).contains("Behavioral anomaly");
+    }
+
+    private LoanDecisionMadeEvent pollForDecision(String loanId) {
+        long stopTime = System.currentTimeMillis() + 10000; // 10s timeout
+        while (System.currentTimeMillis() < stopTime) {
+            ConsumerRecords<String, LoanDecisionMadeEvent> records =
+                    decisionConsumer.poll(Duration.ofMillis(500));
+
+            for (ConsumerRecord<String, LoanDecisionMadeEvent> record : records) {
+                if (loanId.equals(record.value().getLoanRequestId())) {
+                    return record.value();
+                }
+            }
+        }
+        throw new AssertionError("Did not find decision event for loan: " + loanId);
     }
 }
