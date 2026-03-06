@@ -49,6 +49,12 @@ server:
         hibernate:
           format_sql: true
 
+grpc:
+  client:
+    loan-anomaly-service:
+      address: 'static://localhost:9091' # Change for deployment
+      negotiation-type: plaintext
+
 logging:
   level:
     root: INFO
