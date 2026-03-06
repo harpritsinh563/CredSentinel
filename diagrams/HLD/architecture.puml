@@ -1,0 +1,67 @@
+@startuml
+skinparam actorStyle awesome
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+
+skinparam sequence {
+    ArrowColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #34495E
+    ParticipantBackgroundColor #ECF0F1
+    ParticipantFontName 'Verdana'
+    ParticipantFontSize 14
+    ParticipantFontColor #2C3E50
+}
+
+actor "End User" as User #E74C3C
+box "CredSentinel Ecosystem" #F8F9F9
+    participant "Loan Request Service" as LRS #3498DB
+    queue "Kafka: LoanRequestCreated" as K1 #F1C40F
+    participant "Loan Decision Service" as LDS #2ECC71
+    participant "Loan Anomaly Service" as LAS #9B59B6
+    queue "Kafka: LoanDecisionMade" as K2 #F1C40F
+end box
+
+database "PostgreSQL / H2" as DB #95A5A6
+
+== Phase 1: Request Ingestion ==
+
+User -> LRS : POST /api/v1/loans\n(Amount, Tenure, UserID)
+activate LRS
+LRS -> DB : Save Request (Status: REQUESTED)
+LRS -> K1 : Publish LoanRequestCreatedEvent
+LRS -->> User : 202 ACCEPTED (Async Processing)
+deactivate LRS
+
+== Phase 2: Risk & Anomaly Assessment ==
+
+K1 -> LDS : Consume Event
+activate LDS
+LDS -> DB : Query User (Check KYC Status)
+DB -->> LDS : User Data (Status: VERIFIED)
+
+note right of LDS: Strategic Orchestration
+
+LDS -> LAS : gRPC: DetectAnomaly(LoanDetails)
+activate LAS
+LAS -> LAS : Run Velocity & Behavioral Checks
+LAS -->> LDS : Response (NORMAL / SUSPICIOUS)
+deactivate LAS
+
+== Phase 3: Final Decisioning ==
+
+LDS -> LDS : Evaluate Financial Policy Rules
+LDS -> DB : Persist Final Risk Score
+LDS -> DB : Log Status History (APPROVED/REJECTED)
+LDS -> K2 : Publish LoanDecisionMadeEvent
+deactivate LDS
+
+== Phase 4: Feedback Loop ==
+
+K2 -> LRS : Consume Decision Result
+activate LRS
+LRS -> DB : Update Loan Request Status
+deactivate LRS
+
+@enduml
