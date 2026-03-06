@@ -4,7 +4,6 @@ import com.loan.anomaly.grpc.LoanAnomalyRequest;
 import com.loan.anomaly.grpc.LoanAnomalyResponse;
 import com.loan.anomaly.grpc.LoanAnomalyServiceGrpc;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.devh.boot.grpc.server.config.GrpcServerProperties;

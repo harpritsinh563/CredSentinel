@@ -1,7 +1,7 @@
 package com.credsentinel.loandecision.consumer;
 
 import com.credsentinel.loandecision.decision.LoanDecisionEngine;
-import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.common.model.LoanRequestCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

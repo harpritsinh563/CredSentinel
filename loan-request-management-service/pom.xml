@@ -17,6 +17,7 @@
         <lombok.version>1.18.30</lombok.version>
         <r2bc.version>1.0.0.RELEASE</r2bc.version>
         <spring-kafka.version>3.2.4</spring-kafka.version>
+        <credsentinel-common.version>1.0.0-SNAPSHOT</credsentinel-common.version>
     </properties>
 
     <dependencyManagement>
@@ -94,6 +95,12 @@
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
             <version>${spring-kafka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.credsentinel</groupId>
+            <artifactId>common</artifactId>
+            <version>${credsentinel-common.version}</version>
         </dependency>
 
     </dependencies>

@@ -1,7 +1,7 @@
 package com.credsentinel.loanrequestmanagement.entities;
 
+import com.credsentinel.common.enums.LoanStatus;
 import com.github.f4b6a3.uuid.UuidCreator;
-import com.credsentinel.loanrequestmanagement.constants.LoanStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoanRequestEntity {
+public class LoanRequest {
     @Id
     @Column(name = "loan_request_id", nullable = false)
     private UUID loanRequestId= UuidCreator.getTimeOrdered();

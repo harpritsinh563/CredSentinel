@@ -1,6 +1,6 @@
 package com.credsentinel.loandecision.config;
 
-import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.common.model.LoanRequestCreatedEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;

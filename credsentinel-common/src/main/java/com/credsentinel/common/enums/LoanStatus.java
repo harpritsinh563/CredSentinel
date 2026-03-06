@@ -1,4 +1,4 @@
-package com.credsentinel.loanrequestmanagement.constants;
+package com.credsentinel.common.enums;
 
 public enum LoanStatus {
     REQUESTED,

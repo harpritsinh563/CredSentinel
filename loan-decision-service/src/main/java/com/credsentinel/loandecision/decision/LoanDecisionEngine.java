@@ -3,8 +3,8 @@ package com.credsentinel.loandecision.decision;
 import com.credsentinel.loandecision.entity.LoanStatusHistory;
 import com.credsentinel.loandecision.entity.RiskScore;
 import com.credsentinel.loandecision.entity.User;
-import com.credsentinel.loandecision.model.LoanDecisionMadeEvent;
-import com.credsentinel.loandecision.model.LoanRequestCreatedEvent;
+import com.credsentinel.common.model.LoanDecisionMadeEvent;
+import com.credsentinel.common.model.LoanRequestCreatedEvent;
 import com.credsentinel.loandecision.repository.LoanStatusHistoryRepository;
 import com.credsentinel.loandecision.repository.RiskScoreRepository;
 import com.credsentinel.loandecision.repository.UserRepository;
@@ -25,8 +25,8 @@ import java.util.UUID;
 import static com.credsentinel.loandecision.constant.AnomalyStatus.NORMAL;
 import static com.credsentinel.loandecision.constant.AnomalyStatus.SUSPICIOUS;
 import static com.credsentinel.loandecision.constant.KycStatus.VERIFIED;
-import static com.credsentinel.loandecision.constant.LoanDecisionStatus.APPROVED;
-import static com.credsentinel.loandecision.constant.LoanDecisionStatus.REJECTED;
+import static com.credsentinel.common.enums.LoanStatus.APPROVED;
+import static com.credsentinel.common.enums.LoanStatus.REJECTED;
 
 @Component
 @Slf4j
